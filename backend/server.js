@@ -189,8 +189,11 @@ app.get('/api/stream/:episodeId', async (req, res) => {
     const [animeId, seasonNum, episodeNum] = decoded.episodeId.split('_');
     
     if (!animeId || !seasonNum || !episodeNum) {
+      console.error('❌ ID de episodio inválido:', decoded.episodeId);
       return res.status(400).json({ success: false, error: 'ID de episodio inválido' });
     }
+    
+    console.log('🔍 Buscando episodio:', { animeId, seasonNum, episodeNum });
     
     const anime = await Anime.findOne({ id: animeId });
     

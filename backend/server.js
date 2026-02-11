@@ -185,10 +185,17 @@ app.get('/api/stream/:episodeId', async (req, res) => {
     }
     
     // Buscar episodio
-    const [animeId, seasonNum, episodeNum] = decoded.episodeId.split('-');
+    // Usar _ como separador en lugar de -
+    const [animeId, seasonNum, episodeNum] = decoded.episodeId.split('_');
+    
+    if (!animeId || !seasonNum || !episodeNum) {
+      return res.status(400).json({ success: false, error: 'ID de episodio inválido' });
+    }
+    
     const anime = await Anime.findOne({ id: animeId });
     
     if (!anime) {
+      console.error(`❌ Anime no encontrado: ${animeId}`);
       return res.status(404).json({ success: false, error: 'Anime no encontrado' });
     }
     
@@ -196,6 +203,7 @@ app.get('/api/stream/:episodeId', async (req, res) => {
     const episode = season?.episodes.find(e => e.episodeNumber.toString() === episodeNum);
     
     if (!episode) {
+      console.error(`❌ Episodio no encontrado: ${animeId} - Temporada ${seasonNum} - Episodio ${episodeNum}`);
       return res.status(404).json({ success: false, error: 'Episodio no encontrado' });
     }
     
@@ -208,7 +216,7 @@ app.get('/api/stream/:episodeId', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error en streaming:', error);
+    console.error('❌ Error en streaming:', error);
     res.status(500).json({ success: false, error: 'Error al procesar streaming' });
   }
 });

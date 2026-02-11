@@ -1,6 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const fetch = require('node-fetch');
+const translate = require('translate-google-api');
 const { airingAnimeData, finishedAnimeData } = require('./data.js');
 
 // ========================================
@@ -173,10 +174,87 @@ function processAnimeData(data, isAiring = false) {
 }
 
 // ========================================
-// GUARDAR EN MONGODB CON DATOS DE JIKAN
+// TRADUCIR TEXTO AL ESPAÑOL
+// ========================================
+async function translateToSpanish(text, type = 'text') {
+  try {
+    if (!text || text === 'Sin descripción disponible') {
+      return text;
+    }
+
+    // Traducciones predefinidas para status y géneros
+    if (type === 'status') {
+      const statusTranslations = {
+        'Currently Airing': '📺 Actualmente en emisión',
+        'Finished Airing': '✅ Finalizado',
+        'Not yet aired': '🔜 Próximamente',
+        'Cancelled': '❌ Cancelado',
+        'Hiatus': '⏸️ En pausa'
+      };
+      return statusTranslations[text] || text;
+    }
+
+    if (type === 'genre') {
+      const genreTranslations = {
+        'Action': 'Acción',
+        'Adventure': 'Aventura',
+        'Comedy': 'Comedia',
+        'Drama': 'Drama',
+        'Ecchi': 'Ecchi',
+        'Fantasy': 'Fantasía',
+        'Horror': 'Terror',
+        'Mahou Shoujo': 'Magia',
+        'Mecha': 'Mecha',
+        'Music': 'Música',
+        'Mystery': 'Misterio',
+        'Psychological': 'Psicológico',
+        'Romance': 'Romance',
+        'Sci-Fi': 'Ciencia Ficción',
+        'Slice of Life': 'Vida Cotidiana',
+        'Sports': 'Deportes',
+        'Supernatural': 'Sobrenatural',
+        'Thriller': 'Thriller',
+        'Hentai': 'Hentai',
+        'Isekai': 'Isekai',
+        'Seinen': 'Seinen',
+        'Shoujo': 'Shoujo',
+        'Shounen': 'Shounen',
+        'Josei': 'Josei',
+        'Anime': 'Anime'
+      };
+      return genreTranslations[text] || text;
+    }
+
+    if (type === 'rating') {
+      const ratingTranslations = {
+        'G - All Ages': 'G - Para todas las edades',
+        'PG - Children': 'PG - Para niños',
+        'PG-13 - Teens 13 or older': 'PG-13 - Mayores de 13 años',
+        'R - 17+ (violence & profanity)': 'R - Mayores de 17 años',
+        'R+ - Mild Nudity': 'R+ - Nudidad leve',
+        'Rx - Hentai': 'Rx - Hentai'
+      };
+      return ratingTranslations[text] || text;
+    }
+
+    // Traducir texto largo (sinopsis)
+    const [result] = await translate(text, {
+      from: 'en',
+      to: 'es',
+    });
+    return result;
+
+  } catch (error) {
+    console.log(`  ⚠️  Error al traducir: ${error.message}`);
+    return text;
+  }
+}
+
+// ========================================
+// GUARDAR EN MONGODB CON DATOS DE JIKAN Y TRADUCCIÓN
 // ========================================
 async function migrateData() {
-  console.log('🔄 Iniciando migración con datos de Jikan API...\n');
+  console.log('🔄 Iniciando migración con datos de Jikan API y traducción...\n');
 
   try {
     // Procesar animes en emisión
@@ -226,6 +304,28 @@ async function migrateData() {
     console.log(`   ✅ Encontrados: ${jikanSuccess}`);
     console.log(`   ⚠️  No encontrados: ${jikanFailed}`);
 
+    // Traducir todos los datos al español
+    console.log('\n🌍 Traduciendo datos al español...\n');
+    
+    for (let i = 0; i < allAnimes.length; i++) {
+      const anime = allAnimes[i];
+      console.log(`[${i + 1}/${allAnimes.length}] Traduciendo: ${anime.name}`);
+      
+      // Traducir sinopsis
+      anime.synopsis = await translateToSpanish(anime.synopsis, 'text');
+      
+      // Traducir status
+      anime.status = await translateToSpanish(anime.status, 'status');
+      
+      // Traducir géneros
+      anime.genres = await Promise.all(
+        anime.genres.map(genre => translateToSpanish(genre, 'genre'))
+      );
+      
+      // Traducir rating
+      anime.rating = await translateToSpanish(anime.rating, 'rating');
+    }
+
     // Guardar en MongoDB
     let savedCount = 0;
     let updatedCount = 0;
@@ -249,6 +349,7 @@ async function migrateData() {
     console.log(`   ✅ Nuevos: ${savedCount}`);
     console.log(`   🔄 Actualizados: ${updatedCount}`);
     console.log(`   🎨 Con datos de Jikan: ${jikanSuccess}`);
+    console.log(`   🌍 Traducidos al español: ${allAnimes.length}`);
 
     // Verificar en base de datos
     const totalInDB = await Anime.countDocuments();

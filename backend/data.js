@@ -21,6 +21,13 @@ Ao no Miburo Serizawa Ansatsu-hen 1x02.mp4|https://short.icu/jqBKHucy0
 Ao no Miburo Serizawa Ansatsu-hen 1x03.mp4|https://short.icu/g_4BbmIjp
 Ao no Miburo Serizawa Ansatsu-hen 1x04.mp4|https://short.icu/yGTPP5oPl
 Ao no Miburo Serizawa Ansatsu-hen 1x05.mp4|https://short.icu/4nhUi5mQL
+
+Ao no Orchestra: Blue Orchestra 2025 (Domingo)
+Ao no Orchestra: Blue Orchestra 2x14.mp4|https://short.icu/jvi-RHIqx
+Ao no Orchestra: Blue Orchestra 2x15.mp4|https://short.icu/4gKRtQChxH
+Ao no Orchestra: Blue Orchestra 2x16.mp4|https://short.icu/1y5jCPjKK
+Ao no Orchestra: Blue Orchestra 2x17.mp4|https://short.icu/7TOGEeYu88
+Ao no Orchestra: Blue Orchestra 2x18.mp4|https://short.icu/IN9RcKAs3
 `;
 
 // ========================================

@@ -14,6 +14,7 @@
     "dotenv": "^16.3.1",
     "jsonwebtoken": "^9.0.2",
     "helmet": "^7.1.0",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "translate-google-api": "^1.0.6"
   }
 }

@@ -111,7 +111,7 @@ app.get('/api/animes/:type', async (req, res) => {
   try {
     const isAiring = req.params.type === 'airing';
     const animes = await Anime.find({ isAiring })
-      .select('id name year day isAiring seasons.seasonNumber seasons.episodes.episodeNumber seasons.episodes.name seasons.episodes.fileName')
+      .select('id name year day isAiring malId image thumbnail synopsis genres status episodes score rating seasons.seasonNumber seasons.episodes.episodeNumber seasons.episodes.name seasons.episodes.fileName')
       .lean();
     
     const processed = animes.map(anime => ({
@@ -120,8 +120,18 @@ app.get('/api/animes/:type', async (req, res) => {
       year: anime.year,
       day: anime.day,
       isAiring: anime.isAiring,
+      // Datos de Jikan
+      malId: anime.malId,
+      image: anime.image,
+      thumbnail: anime.thumbnail,
+      synopsis: anime.synopsis,
+      genres: anime.genres || [],
+      status: anime.status,
+      totalEpisodes: anime.episodes || anime.seasons.reduce((sum, s) => sum + s.episodes.length, 0),
+      score: anime.score || 0,
+      rating: anime.rating,
+      // Temporadas
       totalSeasons: anime.seasons.length,
-      totalEpisodes: anime.seasons.reduce((sum, s) => sum + s.episodes.length, 0),
       seasons: anime.seasons.map(season => ({
         seasonNumber: season.seasonNumber,
         episodes: season.episodes.map(ep => ({
@@ -132,7 +142,7 @@ app.get('/api/animes/:type', async (req, res) => {
       }))
     }));
     
-    res.json({ success: true,  processed });
+    res.json({ success: true, processed });
   } catch (error) {
     console.error('Error al cargar animes:', error);
     res.status(500).json({ success: false, error: 'Error al cargar animes' });

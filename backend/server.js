@@ -250,17 +250,45 @@ app.get('/api/stream/:episodeId', async (req, res) => {
 });
 
 // ========================================
-// ENDPOINT 4: Proxy de video (OCULTA LA URL REAL)
+// ENDPOINT 4: Proxy de video (OCULTA LA URL REAL + VERIFICACIÓN DE REFERER)
 // ========================================
 app.get('/api/proxy/video/:episodeId', async (req, res) => {
   try {
+    // 🔒 VERIFICACIÓN DE REFERER (PROTECCIÓN ADICIONAL)
+    const referer = req.headers.referer || req.headers.origin;
+    
+    if (!referer) {
+      console.warn('⚠️  Acceso denegado: solicitud sin referer');
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
+
+    let refererOrigin;
+    try {
+      refererOrigin = new URL(referer).origin;
+    } catch (e) {
+      console.warn('⚠️  Acceso denegado: referer inválido');
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
+
+    // 🔐 DOMINIOS AUTORIZADOS (AGREGA TU DOMINIO DE PRODUCCIÓN AQUÍ)
+    const allowedOrigins = [
+      'https://streanime-2-frontend.vercel.app',  // Tu frontend en producción
+      'http://localhost:3000',                     // Para desarrollo local
+      'https://streanime-2.vercel.app'             // Si usas mismo dominio (opcional)
+    ];
+
+    if (!allowedOrigins.includes(refererOrigin)) {
+      console.warn(`⚠️  Acceso denegado: referer no autorizado (${refererOrigin})`);
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
+    
+    // 🔑 VERIFICACIÓN DE TOKEN JWT
     const token = req.query.token;
     
     if (!token) {
       return res.status(401).json({ success: false, error: 'Token requerido' });
     }
     
-    // Verificar token JWT
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -268,7 +296,7 @@ app.get('/api/proxy/video/:episodeId', async (req, res) => {
       return res.status(403).json({ success: false, error: 'Token inválido o expirado' });
     }
     
-    // Buscar episodio
+    // 🔍 BUSCAR EPISODIO
     const [animeId, seasonNum, episodeNum] = decoded.episodeId.split('_');
     
     if (!animeId || !seasonNum || !episodeNum) {
@@ -290,7 +318,8 @@ app.get('/api/proxy/video/:episodeId', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Episodio no encontrado' });
     }
     
-    // Redirigir al video SIN exponer la URL en el frontend
+    // 🔄 REDIRIGIR AL VIDEO (LA URL REAL NUNCA SE EXPONE)
+    console.log(`✅ Proxy: ${anime.name} S${seasonNum}E${episodeNum} solicitado desde ${refererOrigin}`);
     res.redirect(302, episode.videoUrl);
     
   } catch (error) {

@@ -37,6 +37,17 @@ const animeSchema = new mongoose.Schema({
   year: Number,
   day: String,
   isAiring: Boolean,
+  // Campos de Jikan API
+  malId: Number,              // MyAnimeList ID
+  image: String,              // URL de la imagen
+  thumbnail: String,          // URL de la miniatura
+  synopsis: String,           // Descripción
+  genres: [String],           // Géneros
+  status: String,             // Estado (Finished Airing, Currently Airing, etc.)
+  episodes: Number,           // Total de episodios
+  score: Number,              // Puntuación
+  rating: String,             // Clasificación (PG-13, R, etc.)
+  // Temporadas y episodios
   seasons: [{
     seasonNumber: Number,
     episodes: [{

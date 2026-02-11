@@ -49,5 +49,5 @@ One Outs 1x23.mp4|https://short.icu/CQOJzPdwA
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // 🚀 NO EDITES NADA DE AQUÍ PARA ABAJO
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-// Test migration 6
+// Test migration 7
 module.exports = { airingAnimeData, finishedAnimeData };

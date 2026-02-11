@@ -177,5 +177,5 @@ async function migrateData() {
   }
 }
 
-// Ejecutar migración
+// Ejecutar migración 1
 migrateData();

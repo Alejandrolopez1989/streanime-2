@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const fetch = require('node-fetch');
-const translate = require('translate-google-api');
+const translate = require('@vitalets/google-translate-api');
 const { airingAnimeData, finishedAnimeData } = require('./data.js');
 
 // ========================================
@@ -238,11 +238,8 @@ async function translateToSpanish(text, type = 'text') {
     }
 
     // Traducir texto largo (sinopsis)
-    const [result] = await translate(text, {
-      from: 'en',
-      to: 'es',
-    });
-    return result;
+    const result = await translate(text, { from: 'en', to: 'es' });
+    return result.text;
 
   } catch (error) {
     console.log(`  ⚠️  Error al traducir: ${error.message}`);

@@ -76,13 +76,7 @@ function processAnimeData(data, isAiring = false) {
       if (episodeMatch) {
         const seasonNum = parseInt(episodeMatch[2]);
         const episodeNum = parseInt(episodeMatch[3]);
-        const url = episodeMatch[4].trim();
-
-        // Extraer ID del video
-        const videoId = url.split('/').pop();
-
-        // Crear URL de zplayer.io
-        const videoUrl = `https://zplayer.io/?v=${videoId}`;
+        const url = episodeMatch[4].trim(); // URL original
 
         // Crear temporada si no existe
         if (!currentAnime.seasons[seasonNum]) {
@@ -92,11 +86,11 @@ function processAnimeData(data, isAiring = false) {
           };
         }
 
-        // Agregar episodio
+        // Agregar episodio con URL original
         currentAnime.seasons[seasonNum].episodes.push({
           episodeNumber: episodeNum,
           name: `Episodio ${episodeNum}`,
-          videoUrl: videoUrl,
+          videoUrl: url, // ✅ URL original directamente
           fileName: `${seasonNum}x${episodeNum.toString().padStart(2, '0')}.mp4`
         });
       }

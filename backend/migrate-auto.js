@@ -44,89 +44,91 @@ const animeSchema = new mongoose.Schema({
 const Anime = mongoose.model('Anime', animeSchema);
 
 // ========================================
-// BUSCAR ANIME EN ANILIST API (CON SOPORTE NATIVO PARA ESPAÑOL)
+// TRADUCIR TEXTO USANDO GOOGLE TRANSLATE WEB API (FUNCIONA EN GITHUB ACTIONS)
 // ========================================
-async function searchAnimeInAniList(animeName) {
+async function translateText(text) {
+  if (!text || text.length < 10 || text === 'Sin descripción disponible') {
+    return text;
+  }
+  
   try {
-    // Buscar anime por nombre en AniList (devuelve resultados en múltiples idiomas)
-    const query = `
-      query ($search: String) {
-        Media (search: $search, type: ANIME) {
-          id
-          title {
-            spanish
-            romaji
-            english
-          }
-          description(asHtml: false)
-          coverImage {
-            large
-            medium
-          }
-          genres
-          status
-          episodes
-          averageScore
-          seasonYear
-        }
-      }
-    `;
+    // Usar Google Translate web API directamente (sin npm packages)
+    const encodedText = encodeURIComponent(text);
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=es&dt=t&q=${encodedText}`;
     
-    const variables = { search: animeName };
-    
-    const response = await fetch('https://graphql.anilist.co', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept-Language': 'es'
-      },
-      body: JSON.stringify({ query, variables })
-    });
-    
-    if (!response.ok) {
-      console.log(`  ⚠️  AniList error ${response.status}`);
-      return null;
-    }
-    
+    const response = await fetch(url);
     const data = await response.json();
     
-    if (!data.data || !data.data.Media) {
-      console.log(`  ⚠️  No se encontró "${animeName}" en AniList`);
+    if (data && data[0] && Array.isArray(data[0])) {
+      // Extraer texto traducido de la respuesta
+      let translated = '';
+      data[0].forEach(item => {
+        if (item[0]) {
+          translated += item[0];
+        }
+      });
+      
+      if (translated.trim().length > 0) {
+        console.log(`  ✅ Sinopsis traducida (${text.length} chars)`);
+        return translated.trim();
+      }
+    }
+    
+    console.log(`  ⚠️  Traducción falló, usando texto original`);
+    return text;
+    
+  } catch (error) {
+    console.log(`  ⚠️  Error en traducción: ${error.message}`);
+    return text; // Devolver texto original si falla
+  }
+}
+
+// ========================================
+// BUSCAR ANIME EN JIKAN API Y TRADUCIR SINOPSIS
+// ========================================
+async function searchAnimeInJikan(animeName) {
+  try {
+    // Buscar anime por nombre en Jikan
+    const searchUrl = `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(animeName)}&limit=1`;
+    const searchRes = await fetch(searchUrl);
+    
+    if (!searchRes.ok) {
+      console.log(`  ⚠️  No se encontró "${animeName}" en Jikan`);
       return null;
     }
     
-    const media = data.data.Media;
-    const title = media.title.spanish || media.title.romaji || media.title.english || animeName;
+    const searchData = await searchRes.json();
     
-    console.log(`  ✅ Encontrado en AniList: ${title}`);
-    
-    // AniList devuelve la descripción en inglés, pero podemos detectar si hay versión en español
-    let synopsis = media.description || 'Sin descripción disponible';
-    
-    // Si la sinopsis tiene caracteres japoneses/chinos, intentar obtener versión en español
-    if (/[ぁ-ヿ々〆〤一-鿿]/u.test(synopsis)) {
-      synopsis = `¡Descubre ${title}! Una emocionante historia llena de aventuras y momentos inolvidables. Disfruta de todos los episodios disponibles en nuestra plataforma.`;
+    if (!searchData.data || searchData.data.length === 0) {
+      console.log(`  ⚠️  No se encontró "${animeName}" en Jikan`);
+      return null;
     }
     
-    // Si es muy corta o genérica, usar descripción mejorada en español
-    if (synopsis.length < 50 || synopsis.toLowerCase().includes('no description')) {
-      synopsis = `¡Sumérgete en el mundo de ${title}! Esta fascinante serie te llevará a través de emocionantes aventuras, personajes memorables y giros inesperados. No te pierdas ni un solo episodio de esta increíble historia.`;
-    }
+    // Obtener el primer resultado
+    const animeData = searchData.data[0];
+    
+    console.log(`  ✅ Encontrado en Jikan: ${animeData.title}`);
+    
+    // Traducir sinopsis a español
+    let synopsis = animeData.synopsis || 'Sin descripción disponible';
+    console.log(`  🌍 Traduciendo sinopsis...`);
+    synopsis = await translateText(synopsis);
     
     return {
-      malId: media.id,
-      image: media.coverImage.large || media.coverImage.medium,
-      thumbnail: media.coverImage.medium,
-      synopsis: synopsis,
-      genres: media.genres || ['Anime'],
-      status: media.status,
-      episodes: media.episodes || 0,
-      score: media.averageScore ? media.averageScore / 10 : 0,
-      rating: 'N/A'
+      malId: animeData.mal_id,
+      // Usar la MISMA imagen para card y detalle
+      image: animeData.images.jpg.large_image_url || animeData.images.jpg.image_url,
+      thumbnail: animeData.images.jpg.image_url,
+      synopsis: synopsis, // Sinopsis traducida a español
+      genres: animeData.genres.map(g => g.name),
+      status: animeData.status,
+      episodes: animeData.episodes || 0,
+      score: animeData.score || 0,
+      rating: animeData.rating || 'N/A'
     };
     
   } catch (error) {
-    console.log(`  ⚠️  Error al buscar "${animeName}" en AniList: ${error.message}`);
+    console.log(`  ⚠️  Error al buscar "${animeName}" en Jikan: ${error.message}`);
     return null;
   }
 }
@@ -219,22 +221,22 @@ function processAnimeData(data, isAiring = false) {
 // ========================================
 // TRADUCIR METADATOS AL ESPAÑOL
 // ========================================
-function translateToSpanish(text, type = 'text') {
+function translateMetadata(text, type) {
   if (!text) return text;
 
   if (type === 'status') {
-    const statusTranslations = {
-      'RELEASING': '📺 Actualmente en emisión',
-      'FINISHED': '✅ Finalizado',
-      'NOT_YET_RELEASED': '🔜 Próximamente',
-      'CANCELLED': '❌ Cancelado',
-      'HIATUS': '⏸️ En pausa'
+    const translations = {
+      'Currently Airing': '📺 Actualmente en emisión',
+      'Finished Airing': '✅ Finalizado',
+      'Not yet aired': '🔜 Próximamente',
+      'Cancelled': '❌ Cancelado',
+      'Hiatus': '⏸️ En pausa'
     };
-    return statusTranslations[text] || text;
+    return translations[text] || text;
   }
 
   if (type === 'genre') {
-    const genreTranslations = {
+    const translations = {
       'Action': 'Acción',
       'Adventure': 'Aventura',
       'Comedy': 'Comedia',
@@ -261,7 +263,19 @@ function translateToSpanish(text, type = 'text') {
       'Josei': 'Josei',
       'Anime': 'Anime'
     };
-    return genreTranslations[text] || text;
+    return translations[text] || text;
+  }
+
+  if (type === 'rating') {
+    const translations = {
+      'G - All Ages': 'G - Para todas las edades',
+      'PG - Children': 'PG - Para niños',
+      'PG-13 - Teens 13 or older': 'PG-13 - Mayores de 13 años',
+      'R - 17+ (violence & profanity)': 'R - Mayores de 17 años',
+      'R+ - Mild Nudity': 'R+ - Nudidad leve',
+      'Rx - Hentai': 'Rx - Hentai'
+    };
+    return translations[text] || text;
   }
 
   return text;
@@ -271,7 +285,7 @@ function translateToSpanish(text, type = 'text') {
 // GUARDAR EN MONGODB (FORZAR ACTUALIZACIÓN)
 // ========================================
 async function migrateData() {
-  console.log('🔄 Iniciando migración con AniList API (sinopsis en español)...\n');
+  console.log('🔄 Iniciando migración con Jikan API + Traducción a español...\n');
 
   try {
     // Procesar animes en emisión
@@ -282,48 +296,49 @@ async function migrateData() {
     console.log('🏁 Procesando animes finalizados...');
     const finishedAnimes = processAnimeData(finishedAnimeData, false);
 
-    // Buscar datos de AniList para cada anime
-    console.log('\n🔍 Buscando información en AniList API...\n');
+    // Buscar datos de Jikan para cada anime
+    console.log('\n🔍 Buscando información en Jikan API...\n');
     
     const allAnimes = [...airingAnimes, ...finishedAnimes];
-    let anilistSuccess = 0;
-    let anilistFailed = 0;
+    let jikanSuccess = 0;
+    let jikanFailed = 0;
 
     for (let i = 0; i < allAnimes.length; i++) {
       const anime = allAnimes[i];
       console.log(`[${i + 1}/${allAnimes.length}] Buscando: ${anime.name}`);
       
-      const anilistData = await searchAnimeInAniList(anime.name);
+      const jikanData = await searchAnimeInJikan(anime.name);
       
-      if (anilistData) {
-        Object.assign(anime, anilistData);
-        anilistSuccess++;
+      if (jikanData) {
+        Object.assign(anime, jikanData);
+        jikanSuccess++;
       } else {
         // Datos por defecto con descripción en español
         anime.image = null;
         anime.thumbnail = null;
-        anime.synopsis = `¡Disfruta de ${anime.name}! ${anime.isAiring ? 'Esta serie está actualmente en emisión' : 'Esta serie ha finalizado su emisión'}. Sumérgete en su mundo y no te pierdas ningún episodio.`;
+        anime.synopsis = `${anime.name} es ${anime.isAiring ? 'un anime actualmente en emisión' : 'un anime que ha finalizado su emisión'}. Disfruta de todos los episodios disponibles en nuestra plataforma.`;
         anime.genres = ['Anime'];
-        anime.status = anime.isAiring ? 'RELEASING' : 'FINISHED';
+        anime.status = anime.isAiring ? 'Currently Airing' : 'Finished Airing';
         anime.episodes = anime.seasons.reduce((sum, s) => sum + s.episodes.length, 0);
         anime.score = 0;
         anime.rating = 'N/A';
-        anilistFailed++;
+        jikanFailed++;
       }
       
       // Traducir metadatos
-      anime.status = translateToSpanish(anime.status, 'status');
-      anime.genres = anime.genres.map(genre => translateToSpanish(genre, 'genre'));
+      anime.status = translateMetadata(anime.status, 'status');
+      anime.genres = anime.genres.map(g => translateMetadata(g, 'genre'));
+      anime.rating = translateMetadata(anime.rating, 'rating');
       
-      // Esperar para no saturar la API
+      // Esperar para no saturar las APIs
       if (i < allAnimes.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 1500));
       }
     }
 
-    console.log(`\n📊 Resultados de AniList API:`);
-    console.log(`   ✅ Encontrados: ${anilistSuccess}`);
-    console.log(`   ⚠️  No encontrados: ${anilistFailed}`);
+    console.log(`\n📊 Resultados de Jikan API:`);
+    console.log(`   ✅ Encontrados: ${jikanSuccess}`);
+    console.log(`   ⚠️  No encontrados: ${jikanFailed}`);
 
     // Guardar/actualizar en MongoDB (FORZAR ACTUALIZACIÓN)
     let savedCount = 0;
@@ -331,7 +346,7 @@ async function migrateData() {
     
     for (const anime of allAnimes) {
       try {
-        // FORZAR ACTUALIZACIÓN con $set para garantizar que se sobrescriban todos los campos
+        // FORZAR ACTUALIZACIÓN con $set
         const result = await Anime.updateOne(
           { id: anime.id },
           { 
@@ -341,9 +356,9 @@ async function migrateData() {
               day: anime.day,
               isAiring: anime.isAiring,
               malId: anime.malId,
-              image: anime.image,
-              thumbnail: anime.thumbnail,
-              synopsis: anime.synopsis, // ¡ESTA ES LA SINOPSIS EN ESPAÑOL!
+              image: anime.image,        // Imagen grande para card Y detalle
+              thumbnail: anime.thumbnail, // Miniatura (por si acaso)
+              synopsis: anime.synopsis,   // Sinopsis traducida a español
               genres: anime.genres,
               status: anime.status,
               episodes: anime.episodes,
@@ -355,14 +370,12 @@ async function migrateData() {
           { upsert: true }
         );
         
-        if (result.upsertedCount > 0 || result.modifiedCount > 0) {
-          if (result.upsertedCount > 0) {
-            savedCount++;
-            console.log(`  ✅ ${anime.name} - Nuevo`);
-          } else {
-            updatedCount++;
-            console.log(`  🔄 ${anime.name} - Actualizado (sinopsis en español)`);
-          }
+        if (result.upsertedCount > 0) {
+          savedCount++;
+          console.log(`  ✅ ${anime.name} - Nuevo`);
+        } else if (result.modifiedCount > 0) {
+          updatedCount++;
+          console.log(`  🔄 ${anime.name} - Actualizado`);
         } else {
           console.log(`  ⚠️  ${anime.name} - Sin cambios`);
         }
@@ -375,7 +388,7 @@ async function migrateData() {
     console.log(`📊 Total procesado: ${allAnimes.length} animes`);
     console.log(`   ✅ Nuevos: ${savedCount}`);
     console.log(`   🔄 Actualizados: ${updatedCount}`);
-    console.log(`   🌍 Sinopsis en español: ${allAnimes.length}`);
+    console.log(`   🌍 Sinopsis traducidas: ${jikanSuccess}`);
 
     // Verificar en base de datos
     const totalInDB = await Anime.countDocuments();

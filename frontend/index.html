@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STREANIME - Catálogo de animes online</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo" id="homeLogo">
+                    <i class="fas fa-play-circle"></i>
+                    <h1>STREANIME</h1>
+                </div>
+                <div class="nav-controls">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Buscar anime...">
+                        <button id="searchBtn"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb container" id="breadcrumb" style="display: none;">
+        <a href="#" id="breadcrumbHome">Inicio</a> 
+        <span> > </span>
+        <span id="breadcrumbAnimeTitle"></span>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <div class="container">
+            <!-- Selector de tipo de contenido -->
+            <div class="content-type-selector">
+                <button class="type-selector-btn active finished" id="finishedBtn">
+                    <i class="fas fa-flag-checkered"></i>
+                    ANIMES FINALIZADOS
+                </button>
+                <button class="type-selector-btn" id="airingBtn">
+                    <i class="fas fa-broadcast-tower"></i>
+                    EN EMISIÓN
+                </button>
+            </div>
+            
+            <!-- Encabezado dinámico -->
+            <div class="airing-header">
+                <h2 id="pageTitle"><i class="fas fa-flag-checkered"></i> ANIMES FINALIZADOS</h2>
+                <p id="pageSubtitle">Disfruta de los animes que ya han finalizado su emisión</p>
+            </div>
+            
+            <div class="stats">
+                <p>Total: <span id="totalContent">0</span></p>
+                <p>Mostrando: <span id="showingContent">0</span></p>
+                <p id="contentTypeLabel">Animes Finalizados</p>
+            </div>
+
+            <!-- Botones de Días de la Semana (oculto para finalizados) -->
+            <div class="days-section container" id="daysSection" style="display: none;">
+                <h3><i class="fas fa-calendar-alt"></i> FILTRAR POR DÍA DE ESTRENO</h3>
+                <div class="days-buttons">
+                    <button class="day-btn active" data-day="all">Todos</button>
+                    <button class="day-btn" data-day="Lunes">Lunes</button>
+                    <button class="day-btn" data-day="Martes">Martes</button>
+                    <button class="day-btn" data-day="Miércoles">Miércoles</button>
+                    <button class="day-btn" data-day="Jueves">Jueves</button>
+                    <button class="day-btn" data-day="Viernes">Viernes</button>
+                    <button class="day-btn" data-day="Sábado">Sábado</button>
+                    <button class="day-btn" data-day="Domingo">Domingo</button>
+                </div>
+            </div>
+            
+            <!-- Botones de filtro por año (solo visible para finalizados, se generan dinámicamente) -->
+            <div class="filter-controls" id="yearFilterControls">
+                <!-- Se generan dinámicamente en JS -->
+            </div>
+            
+            <div id="contentGrid" class="content-grid">
+                <!-- El contenido se cargará aquí dinámicamente -->
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Cargando animes...</p>
+                </div>
+            </div>
+            
+            <!-- Botón para cargar más -->
+            <div id="paginationContainer" style="text-align: center; margin: 30px 0;">
+                <button id="loadMoreBtn" class="load-more-btn">
+                    <i class="fas fa-plus"></i> Ver más
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Sección de detalle de anime -->
+    <section class="anime-detail-section" id="animeDetailSection">
+        <div class="container">
+            <button class="back-btn" id="backToAnimeList">
+                <i class="fas fa-arrow-left"></i> Volver
+            </button>
+            
+            <div class="anime-header" id="animeHeader">
+                <div class="anime-poster">
+                    <div class="poster-placeholder">
+                        <span id="animeInitials">AN</span>
+                    </div>
+                    <img id="animeDetailPoster" src="" alt="" style="display: none;">
+                </div>
+                
+                <div class="anime-info">
+                    <h1 class="anime-title" id="animeDetailTitle">Nombre del Anime</h1>
+                    <div class="anime-meta">
+                        <span id="animeDetailYear">2023</span>
+                        <span id="animeDetailSeasons">3 Temporadas</span>
+                        <span id="animeDetailEpisodes">24 Episodios</span>
+                    </div>
+                    <p class="anime-description" id="animeDetailDescription">
+                        Descripción del anime...
+                    </p>
+                </div>
+            </div>
+            
+            <div class="seasons-container" id="seasonsContainer">
+                <!-- Las temporadas se cargarán aquí -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Botón para volver arriba -->
+    <div class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </div>
+
+    <!-- PLAYER MODAL -->
+<div id="playerModal" class="player-modal" style="display:none;">
+    <div class="player-container">
+        <div class="player-header">
+            <h2 id="playerTitle">Cargando...</h2>
+            <button class="close-player" onclick="closePlayer()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="player-iframe-container">
+            <iframe id="playerIframe" frameborder="0" allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>STREANIME - Catálogo de animes online</p>
+            <p>DEVELOPED BY KEONEX KNX</p>
+        </div>
+    </footer>
+    
+    <!-- PLAYER MODAL -->
+    <div id="playerModal" class="player-modal" style="display:none;">
+        <div class="player-container">
+            <div class="player-header">
+                <h2 id="playerTitle">Cargando...</h2>
+                <button class="close-player" onclick="closePlayer()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="player-iframe-container">
+                <iframe id="playerIframe" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/player.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+name: Auto Migrate to MongoDB
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'backend/data.js'  # Solo se ejecuta si cambia data.js
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm install
+
+    - name: Run migration
+      working-directory: ./backend
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      run: node migrate-auto.js
+
+    - name: Notify success
+      if: success()
+      run: echo "✅ Migración completada exitosamente"
+
+    - name: Notify failure
+      if: failure()
+      run: echo "❌ Error en la migración"

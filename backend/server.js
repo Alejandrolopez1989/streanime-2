@@ -250,14 +250,53 @@ app.get('/api/stream/:episodeId', async (req, res) => {
 });
 
 // ========================================
-// ENDPOINT 4: Health check
+// ENDPOINT 4: Proxy de video (OCULTA LA URL REAL)
 // ========================================
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    success: true, 
-    status: 'ok', 
-    timestamp: new Date().toISOString() 
-  });
+app.get('/api/proxy/video/:episodeId', async (req, res) => {
+  try {
+    const token = req.query.token;
+    
+    if (!token) {
+      return res.status(401).json({ success: false, error: 'Token requerido' });
+    }
+    
+    // Verificar token JWT
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (e) {
+      return res.status(403).json({ success: false, error: 'Token inválido o expirado' });
+    }
+    
+    // Buscar episodio
+    const [animeId, seasonNum, episodeNum] = decoded.episodeId.split('_');
+    
+    if (!animeId || !seasonNum || !episodeNum) {
+      return res.status(400).json({ success: false, error: 'ID de episodio inválido' });
+    }
+    
+    const anime = await Anime.findOne({ id: animeId });
+    
+    if (!anime) {
+      console.error(`❌ Anime no encontrado: ${animeId}`);
+      return res.status(404).json({ success: false, error: 'Anime no encontrado' });
+    }
+    
+    const season = anime.seasons.find(s => s.seasonNumber.toString() === seasonNum);
+    const episode = season?.episodes.find(e => e.episodeNumber.toString() === episodeNum);
+    
+    if (!episode) {
+      console.error(`❌ Episodio no encontrado: ${animeId} - Temporada ${seasonNum} - Episodio ${episodeNum}`);
+      return res.status(404).json({ success: false, error: 'Episodio no encontrado' });
+    }
+    
+    // Redirigir al video SIN exponer la URL en el frontend
+    res.redirect(302, episode.videoUrl);
+    
+  } catch (error) {
+    console.error('❌ Error en proxy de video:', error);
+    res.status(500).json({ success: false, error: 'Error al procesar video' });
+  }
 });
 
 // ========================================

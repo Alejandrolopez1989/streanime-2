@@ -8,6 +8,8 @@ const helmet = require('helmet');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const translate = require('translate-google-api');
+
 // ========================================
 // LOGGING DE VARIABLES DE ENTORNO (para debugging)
 // ========================================

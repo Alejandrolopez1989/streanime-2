@@ -176,6 +176,6 @@ async function migrateData() {
     process.exit(1);
   }
 }
-// migrar 1
+
 // Ejecutar migración
 migrateData();

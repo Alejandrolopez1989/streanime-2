@@ -44,16 +44,15 @@ const animeSchema = new mongoose.Schema({
 const Anime = mongoose.model('Anime', animeSchema);
 
 // ========================================
-// BUSCAR ANIME EN JIKAN API (CON SOPORTE PARA ESPAÑOL)
+// BUSCAR ANIME EN JIKAN API
 // ========================================
 async function searchAnimeInJikan(animeName) {
   try {
-    // Buscar anime por nombre - SOLICITAR ESPAÑOL DIRECTAMENTE
+    // Buscar anime por nombre
     const searchUrl = `https://api.jikan.moe/v4/anime?q=${encodeURIComponent(animeName)}&limit=1`;
     const searchRes = await fetch(searchUrl, {
       headers: {
-        'Accept-Language': 'es-ES', // ¡ESTO ES CLAVE! Solicita datos en español
-        'User-Agent': 'Mozilla/5.0' // Evitar bloqueos
+        'User-Agent': 'Mozilla/5.0'
       }
     });
     
@@ -69,16 +68,16 @@ async function searchAnimeInJikan(animeName) {
       return null;
     }
     
-    // Obtener el primer resultado - YA VIENE EN ESPAÑOL
+    // Obtener el primer resultado
     const animeData = searchData.data[0];
     
-    console.log(`  ✅ Encontrado en Jikan (ES): ${animeData.title}`);
+    console.log(`  ✅ Encontrado en Jikan: ${animeData.title}`);
     
     return {
       malId: animeData.mal_id,
       image: animeData.images.jpg.large_image_url || animeData.images.jpg.image_url,
       thumbnail: animeData.images.jpg.image_url,
-      // ¡LA SINOPSIS YA VIENE EN ESPAÑOL!
+      // La sinopsis viene en inglés - la traduciremos después
       synopsis: animeData.synopsis || 'Sin descripción disponible',
       // Los géneros vienen en inglés, los traduciremos después
       genres: animeData.genres.map(g => g.name),
@@ -92,6 +91,44 @@ async function searchAnimeInJikan(animeName) {
   } catch (error) {
     console.log(`  ⚠️  Error al buscar "${animeName}" en Jikan: ${error.message}`);
     return null;
+  }
+}
+
+// ========================================
+// TRADUCIR TEXTO CON LIBRETRANSLATE API (GRATUITO Y CONFIABLE)
+// ========================================
+async function translateWithLibreTranslate(text) {
+  if (!text || text === 'Sin descripción disponible' || text.length < 10) {
+    return text;
+  }
+  
+  try {
+    // Usar LibreTranslate API pública (sin autenticación)
+    const response = await fetch('https://libretranslate.de/translate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        q: text,
+        source: 'en',
+        target: 'es',
+        format: 'text'
+      })
+    });
+    
+    if (!response.ok) {
+      console.log(`  ⚠️  LibreTranslate error ${response.status}: ${await response.text()}`);
+      return text; // Devolver texto original si falla
+    }
+    
+    const data = await response.json();
+    console.log(`  ✅ Sinopsis traducida (${text.length} chars → ${data.translatedText.length} chars)`);
+    return data.translatedText;
+    
+  } catch (error) {
+    console.log(`  ⚠️  Error en LibreTranslate: ${error.message}`);
+    return text; // Devolver texto original si falla
   }
 }
 
@@ -247,10 +284,10 @@ function translateToSpanish(text, type = 'text') {
 }
 
 // ========================================
-// GUARDAR EN MONGODB CON DATOS DE JIKAN EN ESPAÑOL
+// GUARDAR EN MONGODB CON SINOPSIS TRADUCIDA
 // ========================================
 async function migrateData() {
-  console.log('🔄 Iniciando migración con datos de Jikan API en español...\n');
+  console.log('🔄 Iniciando migración con sinopsis traducida al español...\n');
 
   try {
     // Procesar animes en emisión
@@ -262,7 +299,7 @@ async function migrateData() {
     const finishedAnimes = processAnimeData(finishedAnimeData, false);
 
     // Buscar datos de Jikan para cada anime
-    console.log('\n🔍 Buscando información en Jikan API (ES)...\n');
+    console.log('\n🔍 Buscando información en Jikan API...\n');
     
     const allAnimes = [...airingAnimes, ...finishedAnimes];
     let jikanSuccess = 0;
@@ -300,21 +337,24 @@ async function migrateData() {
     console.log(`   ✅ Encontrados: ${jikanSuccess}`);
     console.log(`   ⚠️  No encontrados: ${jikanFailed}`);
 
-    // Traducir status, géneros y rating (la sinopsis YA VIENE en español de Jikan)
-    console.log('\n🌍 Traduciendo metadatos al español...\n');
+    // Traducir sinopsis al español con LibreTranslate
+    console.log('\n🌍 Traduciendo sinopsis al español con LibreTranslate...\n');
 
     for (let i = 0; i < allAnimes.length; i++) {
       const anime = allAnimes[i];
-      console.log(`[${i + 1}/${allAnimes.length}] Procesando: ${anime.name}`);
+      console.log(`[${i + 1}/${allAnimes.length}] Traduciendo sinopsis: ${anime.name}`);
       
-      // Status, géneros y rating vienen en inglés - traducir con diccionario
+      // Traducir sinopsis
+      anime.synopsis = await translateWithLibreTranslate(anime.synopsis);
+      
+      // Traducir status, géneros y rating con diccionario
       anime.status = translateToSpanish(anime.status, 'status');
       anime.genres = anime.genres.map(genre => translateToSpanish(genre, 'genre'));
       anime.rating = translateToSpanish(anime.rating, 'rating');
       
-      // ¡LA SINOPSIS YA ESTÁ EN ESPAÑOL! No traducir
-      if (!anime.synopsis || anime.synopsis === 'Sin descripción disponible') {
-        anime.synopsis = `${anime.name} es ${anime.isAiring ? 'un anime actualmente en emisión' : 'un anime que ha finalizado su emisión'}. Disfruta de todos los episodios disponibles en nuestra plataforma.`;
+      // Esperar 2 segundos entre traducciones para no saturar LibreTranslate
+      if (i < allAnimes.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
 
@@ -341,7 +381,7 @@ async function migrateData() {
     console.log(`   ✅ Nuevos: ${savedCount}`);
     console.log(`   🔄 Actualizados: ${updatedCount}`);
     console.log(`   🎨 Con datos de Jikan: ${jikanSuccess}`);
-    console.log(`   🌍 Sinopsis en español: ${jikanSuccess} (directo de MyAnimeList)`);
+    console.log(`   🌍 Sinopsis traducidas: ${allAnimes.length}`);
     console.log(`   📝 Metadatos traducidos: ${allAnimes.length}`);
 
     // Verificar en base de datos

@@ -8,17 +8,14 @@ const helmet = require('helmet');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const translate = require('translate-google-api');
-
 // ========================================
-// LOGGING DE VARIABLES DE ENTORNO (para debugging)
+// LOGGING DE VARIABLES DE ENTORNO
 // ========================================
 console.log('🔍 Variables de entorno cargadas:');
 console.log('  MONGODB_URI:', process.env.MONGODB_URI ? '✅ Configurado' : '❌ No configurado');
 console.log('  JWT_SECRET:', process.env.JWT_SECRET ? `✅ Configurado (${process.env.JWT_SECRET.length} caracteres)` : '❌ No configurado');
 console.log('  FRONTEND_URL:', process.env.FRONTEND_URL || 'No configurado');
 console.log('  TOKEN_EXPIRES:', process.env.TOKEN_EXPIRES || '300');
-console.log('  PORT:', process.env.PORT || 3000);
 
 // ========================================
 // CONEXIÓN A MONGODB ATLAS
@@ -39,17 +36,15 @@ const animeSchema = new mongoose.Schema({
   year: Number,
   day: String,
   isAiring: Boolean,
-  // Campos de Jikan API
-  malId: Number,              // MyAnimeList ID
-  image: String,              // URL de la imagen
-  thumbnail: String,          // URL de la miniatura
-  synopsis: String,           // Descripción
-  genres: [String],           // Géneros
-  status: String,             // Estado (Finished Airing, Currently Airing, etc.)
-  episodes: Number,           // Total de episodios
-  score: Number,              // Puntuación
-  rating: String,             // Clasificación (PG-13, R, etc.)
-  // Temporadas y episodios
+  malId: Number,
+  image: String,
+  thumbnail: String,
+  synopsis: String,
+  genres: [String],
+  status: String,
+  episodes: Number,
+  score: Number,
+  rating: String,
   seasons: [{
     seasonNumber: Number,
     episodes: [{
@@ -66,12 +61,22 @@ const Anime = mongoose.model('Anime', animeSchema);
 // ========================================
 // MIDDLEWARES DE SEGURIDAD
 // ========================================
+// Configurar CORS correctamente para Vercel
+const corsOptions = {
+  origin: process.env.FRONTEND_URL ? 
+    [process.env.FRONTEND_URL, 'https://streanime-2-frontend.vercel.app'] : 
+    '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Manejar preflight requests
+app.options('*', cors(corsOptions));
 
 // ========================================
 // GENERADOR DE TOKENS JWT
@@ -107,7 +112,7 @@ function generateStreamToken(episodeId) {
 }
 
 // ========================================
-// ENDPOINT 1: Obtener listado de animes
+// ENDPOINT 1: Obtener listado de animes (SIN TRADUCCIÓN - ya está en DB)
 // ========================================
 app.get('/api/animes/:type', async (req, res) => {
   try {
@@ -122,17 +127,15 @@ app.get('/api/animes/:type', async (req, res) => {
       year: anime.year,
       day: anime.day,
       isAiring: anime.isAiring,
-      // Datos de Jikan
       malId: anime.malId,
       image: anime.image,
       thumbnail: anime.thumbnail,
-      synopsis: anime.synopsis,
+      synopsis: anime.synopsis, // Ya traducido en la migración
       genres: anime.genres || [],
-      status: anime.status,
+      status: anime.status, // Ya traducido en la migración
       totalEpisodes: anime.episodes || anime.seasons.reduce((sum, s) => sum + s.episodes.length, 0),
       score: anime.score || 0,
-      rating: anime.rating,
-      // Temporadas
+      rating: anime.rating, // Ya traducido en la migración
       totalSeasons: anime.seasons.length,
       seasons: anime.seasons.map(season => ({
         seasonNumber: season.seasonNumber,
@@ -207,8 +210,7 @@ app.get('/api/stream/:episodeId', async (req, res) => {
       return res.status(403).json({ success: false, error: 'Token inválido o expirado' });
     }
     
-    // Buscar episodio
-    // Usar _ como separador en lugar de -
+    // Buscar episodio (usar _ como separador)
     const [animeId, seasonNum, episodeNum] = decoded.episodeId.split('_');
     
     if (!animeId || !seasonNum || !episodeNum) {
@@ -255,6 +257,18 @@ app.get('/api/health', (req, res) => {
     success: true, 
     status: 'ok', 
     timestamp: new Date().toISOString() 
+  });
+});
+
+// ========================================
+// MANEJADOR DE ERRORES GLOBAL
+// ========================================
+app.use((err, req, res, next) => {
+  console.error('Error global:', err);
+  res.status(500).json({ 
+    success: false, 
+    error: 'Error interno del servidor',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 

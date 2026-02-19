@@ -716,6 +716,57 @@ One Outs 1x02.mp4|https://short.icu/jvrKFshxA
 One Outs 1x03.mp4|https://short.icu/pBJG2JRO2
 One Outs 1x01.mp4|https://short.icu/SE5xLEQfR
 
+Vinland Saga 2019
+
+Vinland Saga 1x01.mp4|https://short.icu/MRpDQlxvvI
+Vinland Saga 1x02.mp4|https://short.icu/YofZCI8yP
+Vinland Saga 1x03.mp4|https://short.icu/xz5ujwCFI
+Vinland Saga 1x04.mp4|https://short.icu/2TprlnQS0
+Vinland Saga 1x05.mp4|https://short.icu/2JfZncGXzK
+Vinland Saga 1x06.mp4|https://short.icu/QRAjnvyCF
+Vinland Saga 1x07.mp4|https://short.icu/vd8XLHbBdn
+Vinland Saga 1x08.mp4|https://short.icu/OP_hOqrQ8
+Vinland Saga 1x09.mp4|https://short.icu/4v7yHu93i
+Vinland Saga 1x10.mp4|https://short.icu/1kBxwhJa0
+Vinland Saga 1x11.mp4|https://short.icu/IjQhaEs_-
+Vinland Saga 1x12.mp4|https://short.icu/_2RSDLNTN
+Vinland Saga 1x13.mp4|https://short.icu/dxu6vU65RF
+Vinland Saga 1x14.mp4|https://short.icu/BQmn29Kvk
+Vinland Saga 1x15.mp4|https://short.icu/NrNJvzUbP
+Vinland Saga 1x16.mp4|https://short.icu/w9BKWpwp8
+Vinland Saga 1x17.mp4|https://short.icu/IF9EdGtPM
+Vinland Saga 1x18.mp4|https://short.icu/SjnOLzsou
+Vinland Saga 1x19.mp4|https://short.icu/897kF7u5m
+Vinland Saga 1x20.mp4|https://short.icu/UCQ9WSaJt
+Vinland Saga 1x21.mp4|https://short.icu/xNN-xXqoc
+Vinland Saga 1x22.mp4|https://short.icu/dQTTEv44n
+Vinland Saga 1x23.mp4|https://short.icu/jczDmjad-
+Vinland Saga 1x24.mp4|https://short.icu/EaMczOLDm
+Vinland Saga 2x01.mp4|https://short.icu/8s6q7p6FN
+Vinland Saga 2x02.mp4|https://short.icu/Gv90fMoubE
+Vinland Saga 2x03.mp4|https://short.icu/2KF4XVS40
+Vinland Saga 2x04.mp4|https://short.icu/QnugrM08Vh
+Vinland Saga 2x05.mp4|https://short.icu/F8TPntxJ4
+Vinland Saga 2x06.mp4|https://short.icu/Os3W0BzdO
+Vinland Saga 2x07.mp4|https://short.icu/dBN-BCW4w
+Vinland Saga 2x08.mp4|https://short.icu/xG_1cIbDK
+Vinland Saga 2x09.mp4|https://short.icu/YBVJsn8Vf
+Vinland Saga 2x10.mp4|https://short.icu/L0EHFEQvV
+Vinland Saga 2x11.mp4|https://short.icu/PtCBy_lnm
+Vinland Saga 2x12.mp4|https://short.icu/VPeTPIJgE
+Vinland Saga 2x13.mp4|https://short.icu/Ik1OCzVG_
+Vinland Saga 2x14.mp4|https://short.icu/CZD--1ZvM
+Vinland Saga 2x15.mp4|https://short.icu/pbb4inRX2
+Vinland Saga 2x16.mp4|https://short.icu/3ROdGssoy
+Vinland Saga 2x17.mp4|https://short.icu/fMOZyWVwa
+Vinland Saga 2x18.mp4|https://short.icu/kPh3C4iP5
+Vinland Saga 2x19.mp4|https://short.icu/-KUqJvz-D
+Vinland Saga 2x20.mp4|https://short.icu/EHNdXEaOk
+Vinland Saga 2x21.mp4|https://short.icu/KaV8ISXt4
+Vinland Saga 2x22.mp4|https://short.icu/YUzvsMYgZ
+Vinland Saga 2x23.mp4|https://short.icu/GEZ5amLdpU
+Vinland Saga 2x24.mp4|https://short.icu/mX79bLBou
+
 11 Eyes 2009
 
 11 Eyes 1x01.mp4|https://short.icu/4mg02R6S46V
